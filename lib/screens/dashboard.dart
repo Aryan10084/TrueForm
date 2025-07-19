@@ -1,183 +1,193 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
 import 'live_workout.dart';
+import 'profile.dart';
+import 'dart:io';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../utils/string_extensions.dart';
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   static const String routeName = '/dashboard';
   const DashboardScreen({Key? key}) : super(key: key);
 
   @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  File? profileImage;
+  String name = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    final prefs = await SharedPreferences.getInstance();
+    final imgPath = prefs.getString('profileImage');
+    if (imgPath != null) {
+      setState(() {
+        profileImage = File(imgPath);
+      });
+    }
+    final user = FirebaseAuth.instance.currentUser;
+    final email = user?.email ?? 'user@email.com';
+    setState(() {
+      name = email.split('@').first.split('.').first.capitalize();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
     return Scaffold(
-      backgroundColor: const Color(0xFF232531),
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Profile and greeting
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-              child: Row(
-                children: [
-                  const CircleAvatar(
-                    radius: 28,
-                    backgroundColor: Colors.white,
-                    child: Icon(Icons.person, size: 40, color: Color(0xFF232531)),
-                  ),
-                  const SizedBox(width: 16),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+      backgroundColor: Colors.white,
+      body: Stack(
+        children: [
+          // Top wavy background
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Image.asset(
+              'assets/Layer_1.png',
+              width: screenWidth,
+              fit: BoxFit.fitWidth,
+            ),
+          ),
+          SafeArea(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // App bar
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.04, vertical: screenHeight * 0.015),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: const [
-                          Text('Hello,', style: TextStyle(color: Colors.white, fontSize: 18)),
-                          Text('Alice ', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
-                          Text('👋', style: TextStyle(fontSize: 18)),
-                        ],
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back, color: Color(0xFF2196F3)),
+                        onPressed: () {}, // Placeholder
                       ),
-                      const SizedBox(height: 4),
-                      Text('Tuesday, 24 July', style: TextStyle(color: Colors.white54, fontSize: 14)),
+                      Text(
+                        'Dashboard',
+                        style: TextStyle(
+                          color: Color(0xFF2196F3),
+                          fontWeight: FontWeight.bold,
+                          fontSize: screenWidth * 0.055,
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const ProfileScreen()),
+                          );
+                        },
+                        child: profileImage != null
+                            ? CircleAvatar(
+                                backgroundColor: Color(0xFFEAF6FF),
+                                radius: screenWidth * 0.06,
+                                backgroundImage: FileImage(profileImage!),
+                              )
+                            : const CircleAvatar(
+                                backgroundColor: Color(0xFFEAF6FF),
+                                radius: 20,
+                                child: Icon(Icons.person, color: Color(0xFF2196F3)),
+                              ),
+                      ),
                     ],
                   ),
-                ],
-              ),
-            ),
-            // Progress ring and stats
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Progress ring
-                  CustomPaint(
-                    painter: _MultiRingPainter(),
-                    child: const SizedBox(width: 120, height: 120),
-                  ),
-                  const SizedBox(width: 24),
-                  // Stats
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
-                        SizedBox(height: 8),
-                        Text('Calories burn', style: TextStyle(color: Colors.white54, fontSize: 14)),
-                        Text('1074', style: TextStyle(color: Color(0xFFFF4D6D), fontWeight: FontWeight.bold, fontSize: 22)),
-                        SizedBox(height: 8),
-                        Text('Workout time', style: TextStyle(color: Colors.white54, fontSize: 14)),
-                        Text('1hr 24min', style: TextStyle(color: Color(0xFFB2FF59), fontWeight: FontWeight.bold, fontSize: 22)),
-                        SizedBox(height: 8),
-                        Text('No of seasons', style: TextStyle(color: Colors.white54, fontSize: 14)),
-                        Text('4', style: TextStyle(color: Color(0xFF00E0FF), fontWeight: FontWeight.bold, fontSize: 22)),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-            // Start Workout Button
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pushNamed(context, LiveWorkoutScreen.routeName);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF6C63FF),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                    textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-                    minimumSize: const Size.fromHeight(48),
-                  ),
-                  child: const Text('Start Workout'),
                 ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            // Steps and Streaks
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _StatCard(
-                      title: 'Steps',
-                      subtitle: '2h ago',
-                      child: _StepsRing(steps: 5623, percent: 0.7),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _StatCard(
-                      title: 'Streaks',
-                      subtitle: '69 Days',
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
-                          Icon(Icons.local_fire_department, color: Color(0xFFFFA726), size: 40),
-                          SizedBox(height: 8),
-                          Text('69 Days', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
-                        ],
+                // Greeting
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.06, vertical: screenHeight * 0.01),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Good morning,', style: TextStyle(color: Colors.black54, fontSize: screenWidth * 0.045)),
+                      SizedBox(height: screenHeight * 0.003),
+                      Text(
+                        name.isNotEmpty ? name.capitalize() : '',
+                        style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: screenWidth * 0.06),
                       ),
-                    ),
+                    ],
                   ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-            // Posture accuracy
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.transparent,
-                  border: Border.all(color: Colors.white24),
-                  borderRadius: BorderRadius.circular(16),
                 ),
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Posture accuracy', style: TextStyle(color: Colors.white, fontSize: 16)),
-                    const SizedBox(height: 4),
-                    const Text('3h ago', style: TextStyle(color: Colors.white54, fontSize: 12)),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      height: 48,
-                      child: CustomPaint(
-                        painter: _LineChartPainter(),
-                        child: Container(),
+                SizedBox(height: screenHeight * 0.015),
+                // Stat cards
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.04),
+                  child: Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: [
+                      _DashboardCard(
+                        color: Color(0xFFFFF3F3),
+                        borderColor: Color(0xFFFFC1C1),
+                        icon: Icons.local_fire_department,
+                        iconColor: Color(0xFFFF6B6B),
+                        title: 'Calories',
+                        subtitle: 'Great Physical activity',
+                        value: '700/1290Kcal',
+                        time: '1d',
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    const Align(
-                      alignment: Alignment.center,
-                      child: Text('74%', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 22)),
-                    ),
-                  ],
+                      _DashboardCard(
+                        color: Color(0xFFFFFDE7),
+                        borderColor: Color(0xFFFFF59D),
+                        icon: Icons.verified,
+                        iconColor: Color(0xFFFFD600),
+                        title: 'Streak Breaks',
+                        subtitle: 'Healthy weight is 72-82kg',
+                        value: '198 lbs',
+                        time: '1d',
+                        extra: '6\'0"',
+                      ),
+                      _DashboardCard(
+                        color: Color(0xFFE3F6FF),
+                        borderColor: Color(0xFFB3E5FC),
+                        icon: Icons.timer,
+                        iconColor: Color(0xFF29B6F6),
+                        title: 'Sessions',
+                        subtitle: 'Full-body workout to boost strength',
+                        value: '30min/120kcal',
+                        time: '1d',
+                      ),
+                      _DashboardCard(
+                        color: Color(0xFFEDE7F6),
+                        borderColor: Color(0xFFD1C4E9),
+                        icon: Icons.bar_chart,
+                        iconColor: Color(0xFF7C4DFF),
+                        title: 'Posture Accuracy',
+                        subtitle: 'Measures how correctly your body aligns during exercise.',
+                        value: '30min/100 kcal',
+                        time: '1d',
+                      ),
+                    ],
+                  ),
                 ),
-              ),
+                const Spacer(),
+                // Individual bottom buttons
+                Padding(
+                  padding: EdgeInsets.only(bottom: screenHeight * 0.03, left: screenWidth * 0.08, right: screenWidth * 0.08),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _BottomButton(icon: Icons.home, label: 'Home', selected: true, onTap: () {}),
+                      _BottomButton(icon: Icons.fitness_center, label: 'Workouts', onTap: () {}),
+                      _BottomButton(icon: Icons.menu_book, label: 'Tutorial', onTap: () {}),
+                      _BottomButton(icon: Icons.history, label: 'History', onTap: () {}),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            const Spacer(),
-          ],
-        ),
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: const Color(0xFF232531),
-        selectedItemColor: const Color(0xFFB2FF59),
-        unselectedItemColor: Colors.white38,
-        currentIndex: 1,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.fitness_center), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.history), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: ''),
+          ),
         ],
-        onTap: (i) {},
-        type: BottomNavigationBarType.fixed,
-        showSelectedLabels: true,
-        showUnselectedLabels: false,
       ),
     );
   }
@@ -294,4 +304,105 @@ class _LineChartPainter extends CustomPainter {
   }
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class _DashboardCard extends StatelessWidget {
+  final Color color;
+  final Color borderColor;
+  final IconData icon;
+  final Color iconColor;
+  final String title;
+  final String subtitle;
+  final String value;
+  final String time;
+  final String? extra;
+  const _DashboardCard({
+    required this.color,
+    required this.borderColor,
+    required this.icon,
+    required this.iconColor,
+    required this.title,
+    required this.subtitle,
+    required this.value,
+    required this.time,
+    this.extra,
+    Key? key,
+  }) : super(key: key);
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: MediaQuery.of(context).size.width / 2 - 24,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: color,
+        border: Border.all(color: borderColor),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Icon(icon, color: iconColor, size: 28),
+              if (extra != null)
+                Text(extra!, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black, fontSize: 16)),
+              Text(time, style: const TextStyle(color: Colors.black45, fontWeight: FontWeight.bold)),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          const SizedBox(height: 2),
+          Text(subtitle, style: const TextStyle(color: Colors.black54, fontSize: 13)),
+          const SizedBox(height: 8),
+          Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black)),
+        ],
+      ),
+    );
+  }
+}
+
+class _BottomButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  const _BottomButton({required this.icon, required this.label, this.selected = false, required this.onTap, Key? key}) : super(key: key);
+  @override
+  Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              color: selected ? Color(0xFF2196F3) : Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: [
+                if (selected)
+                  BoxShadow(
+                    color: Color(0x332196F3),
+                    blurRadius: 8,
+                    offset: Offset(0, 2),
+                  ),
+              ],
+            ),
+            padding: EdgeInsets.all(screenWidth * 0.035),
+            child: Icon(icon, color: selected ? Colors.white : Color(0xFF2196F3)),
+          ),
+          SizedBox(height: 6),
+          Text(
+            label,
+            style: TextStyle(
+              color: selected ? Color(0xFF2196F3) : Colors.black54,
+              fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+              fontSize: screenWidth * 0.032,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 } 

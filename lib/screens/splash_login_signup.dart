@@ -27,6 +27,18 @@ class _SplashLoginSignupScreenState extends State<SplashLoginSignupScreen> {
     });
   }
 
+  void _showSnackBar(String message, {bool success = false}) {
+    final snackBar = SnackBar(
+      content: Text(message, style: const TextStyle(color: Colors.white)),
+      backgroundColor: success ? Colors.green : Colors.red,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      duration: const Duration(seconds: 2),
+    );
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
+  }
+
   Future<void> _login() async {
     setState(() { _isLoading = true; _error = null; });
     try {
@@ -35,10 +47,13 @@ class _SplashLoginSignupScreenState extends State<SplashLoginSignupScreen> {
         password: _passwordController.text.trim(),
       );
       if (mounted) {
+        _showSnackBar('Login successful!', success: true);
+        await Future.delayed(const Duration(seconds: 2));
         Navigator.pushReplacementNamed(context, DashboardScreen.routeName);
       }
     } catch (e) {
       setState(() { _error = e.toString(); });
+      _showSnackBar('Login failed: ${e.toString()}', success: false);
     } finally {
       setState(() { _isLoading = false; });
     }
@@ -52,10 +67,13 @@ class _SplashLoginSignupScreenState extends State<SplashLoginSignupScreen> {
         password: _passwordController.text.trim(),
       );
       if (mounted) {
+        _showSnackBar('Account created successfully!', success: true);
+        await Future.delayed(const Duration(seconds: 2));
         Navigator.pushReplacementNamed(context, DashboardScreen.routeName);
       }
     } catch (e) {
       setState(() { _error = e.toString(); });
+      _showSnackBar('Account creation failed: ${e.toString()}', success: false);
     } finally {
       setState(() { _isLoading = false; });
     }
@@ -86,43 +104,77 @@ class _SplashLoginSignupScreenState extends State<SplashLoginSignupScreen> {
   }
 
   Widget _buildTabBar() {
-    return Row(
-      children: [
-        Expanded(
-          child: GestureDetector(
-            onTap: () => _switchTab(0),
-            child: Container(
-              height: 4,
-              color: _tabIndex == 0 ? Theme.of(context).colorScheme.primary : Colors.grey[800],
+    // Redesigned tab bar as per Figma
+    return Container(
+      margin: const EdgeInsets.only(top: 32),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF5F6FA),
+        borderRadius: BorderRadius.circular(32),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: GestureDetector(
+              onTap: () => _switchTab(0),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                decoration: BoxDecoration(
+                  color: _tabIndex == 0 ? const Color(0xFF6C63FF) : Colors.transparent,
+                  borderRadius: BorderRadius.circular(32),
+                ),
+                child: Center(
+                  child: Text(
+                    'Login',
+                    style: TextStyle(
+                      color: _tabIndex == 0 ? Colors.white : const Color(0xFF6C63FF),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                  ),
+                ),
+              ),
             ),
           ),
-        ),
-        Expanded(
-          child: GestureDetector(
-            onTap: () => _switchTab(1),
-            child: Container(
-              height: 4,
-              color: _tabIndex == 1 ? Theme.of(context).colorScheme.primary : Colors.grey[800],
+          Expanded(
+            child: GestureDetector(
+              onTap: () => _switchTab(1),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                decoration: BoxDecoration(
+                  color: _tabIndex == 1 ? const Color(0xFF6C63FF) : Colors.transparent,
+                  borderRadius: BorderRadius.circular(32),
+                ),
+                child: Center(
+                  child: Text(
+                    'Register',
+                    style: TextStyle(
+                      color: _tabIndex == 1 ? Colors.white : const Color(0xFF6C63FF),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                  ),
+                ),
+              ),
             ),
           ),
-        ),
-        Expanded(
-          child: Container(
-            height: 4,
-            color: Colors.grey[800],
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
   Widget _buildEmailField() {
     return TextField(
       controller: _emailController,
-      decoration: const InputDecoration(
+      decoration: InputDecoration(
         labelText: 'Email',
-        hintText: 'Type yours email',
-        prefixIcon: Icon(Icons.email_outlined, color: Colors.white54),
+        hintText: 'Enter your email',
+        prefixIcon: const Icon(Icons.email_outlined, color: Color(0xFF6C63FF)),
+        filled: true,
+        fillColor: const Color(0xFFF5F6FA),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
+        ),
       ),
       keyboardType: TextInputType.emailAddress,
     );
@@ -133,11 +185,17 @@ class _SplashLoginSignupScreenState extends State<SplashLoginSignupScreen> {
       controller: _passwordController,
       decoration: InputDecoration(
         labelText: 'Password',
-        hintText: 'Type yours password',
-        prefixIcon: const Icon(Icons.lock_outline, color: Colors.white54),
+        hintText: 'Enter your password',
+        prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFF6C63FF)),
         suffixIcon: IconButton(
-          icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility, color: Colors.white54),
+          icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility, color: const Color(0xFF6C63FF)),
           onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+        ),
+        filled: true,
+        fillColor: const Color(0xFFF5F6FA),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
         ),
       ),
       obscureText: _obscurePassword,
@@ -149,53 +207,64 @@ class _SplashLoginSignupScreenState extends State<SplashLoginSignupScreen> {
       alignment: Alignment.centerRight,
       child: TextButton(
         onPressed: () {},
-        child: const Text('Forgot password ?', style: TextStyle(color: Color(0xFF00E0FF))),
+        child: const Text('Forgot password?', style: TextStyle(color: Color(0xFF6C63FF), fontWeight: FontWeight.w600)),
       ),
     );
   }
 
   Widget _buildSignInButton() {
-    return ElevatedButton(
-      onPressed: _isLoading ? null : _login,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFF6C63FF),
-        foregroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        minimumSize: const Size.fromHeight(48),
-        textStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: _isLoading ? null : _login,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF6C63FF),
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          minimumSize: const Size.fromHeight(56),
+          textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+        ),
+        child: _isLoading ? const CircularProgressIndicator(color: Colors.white) : const Text('Login'),
       ),
-      child: _isLoading ? const CircularProgressIndicator(color: Colors.white) : const Text('Sign In'),
     );
   }
 
   Widget _buildSignUpButton() {
-    return ElevatedButton(
-      onPressed: _isLoading ? null : _signup,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFF6C63FF),
-        foregroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        minimumSize: const Size.fromHeight(48),
-        textStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: _isLoading ? null : _signup,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF6C63FF),
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          minimumSize: const Size.fromHeight(56),
+          textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+        ),
+        child: _isLoading ? const CircularProgressIndicator(color: Colors.white) : const Text('Register'),
       ),
-      child: _isLoading ? const CircularProgressIndicator(color: Colors.white) : const Text('Sign up'),
     );
   }
 
   Widget _buildSocialButtons() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+    return Column(
       children: [
-        ElevatedButton.icon(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.white,
-            foregroundColor: Colors.black,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-            minimumSize: const Size(160, 48),
+        const SizedBox(height: 16),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: const Color(0xFF232531),
+              side: const BorderSide(color: Color(0xFF6C63FF), width: 2),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              minimumSize: const Size.fromHeight(56),
+              textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            icon: Image.asset('assets/google.png', width: 24, height: 24),
+            label: const Text('Continue with Google'),
+            onPressed: _isLoading ? null : _signInWithGoogle,
           ),
-          icon: Image.asset('assets/google.png', width: 24, height: 24),
-          label: const Text('Sign in with Google'),
-          onPressed: _isLoading ? null : _signInWithGoogle,
         ),
       ],
     );
@@ -205,10 +274,10 @@ class _SplashLoginSignupScreenState extends State<SplashLoginSignupScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Text("Don't have an account? ", style: TextStyle(color: Colors.white54)),
+        const Text("Don't have an account? ", style: TextStyle(color: Color(0xFF232531))),
         GestureDetector(
           onTap: () => _switchTab(1),
-          child: const Text('Sign up here', style: TextStyle(color: Color(0xFF00E0FF))),
+          child: const Text('Register', style: TextStyle(color: Color(0xFF6C63FF), fontWeight: FontWeight.bold)),
         ),
       ],
     );
@@ -218,10 +287,10 @@ class _SplashLoginSignupScreenState extends State<SplashLoginSignupScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Text('Already have an account? ', style: TextStyle(color: Colors.white54)),
+        const Text('Already have an account? ', style: TextStyle(color: Color(0xFF232531))),
         GestureDetector(
           onTap: () => _switchTab(0),
-          child: const Text('Sign in here', style: TextStyle(color: Color(0xFF00E0FF))),
+          child: const Text('Login', style: TextStyle(color: Color(0xFF6C63FF), fontWeight: FontWeight.bold)),
         ),
       ],
     );
@@ -230,12 +299,12 @@ class _SplashLoginSignupScreenState extends State<SplashLoginSignupScreen> {
   Widget _buildDivider() {
     return Row(
       children: [
-        const Expanded(child: Divider(color: Colors.white24)),
+        const Expanded(child: Divider(color: Color(0xFF6C63FF), thickness: 1)),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8.0),
-          child: Text('Or', style: TextStyle(color: Colors.white.withOpacity(0.5))),
+          child: Text('or', style: TextStyle(color: Colors.grey[600], fontWeight: FontWeight.w600)),
         ),
-        const Expanded(child: Divider(color: Colors.white24)),
+        const Expanded(child: Divider(color: Color(0xFF6C63FF), thickness: 1)),
       ],
     );
   }
@@ -244,20 +313,26 @@ class _SplashLoginSignupScreenState extends State<SplashLoginSignupScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        const SizedBox(height: 48),
+        const Text('Welcome Back!', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Color(0xFF232531))),
+        const SizedBox(height: 8),
+        const Text('Login to your account', style: TextStyle(color: Color(0xFF6C63FF), fontSize: 16)),
         const SizedBox(height: 32),
-        const Text('Sign in with Email', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+        _buildInputField(icon: Icons.email_outlined, hint: 'Email', controller: _emailController, keyboardType: TextInputType.emailAddress),
+        _buildInputField(
+          icon: Icons.lock_outline,
+          hint: 'Password',
+          obscure: _obscurePassword,
+          controller: _passwordController,
+          suffixIcon: IconButton(
+            icon: Icon(
+              _obscurePassword ? Icons.visibility_off : Icons.visibility,
+              color: const Color(0xFFBDBDBD),
+            ),
+            onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+          ),
+        ),
         const SizedBox(height: 8),
-        const Text('Input your registered account!', style: TextStyle(color: Colors.white54)),
-        const SizedBox(height: 32),
-        const Text('Email'),
-        const SizedBox(height: 8),
-        _buildEmailField(),
-        const SizedBox(height: 16),
-        const Text('Password'),
-        const SizedBox(height: 8),
-        _buildPasswordField(),
-        _buildForgotPassword(),
-        const SizedBox(height: 16),
         if (_error != null) ...[
           Text(_error!, style: const TextStyle(color: Colors.red)),
           const SizedBox(height: 8),
@@ -265,7 +340,6 @@ class _SplashLoginSignupScreenState extends State<SplashLoginSignupScreen> {
         _buildSignInButton(),
         const SizedBox(height: 24),
         _buildDivider(),
-        const SizedBox(height: 24),
         _buildSocialButtons(),
         const SizedBox(height: 32),
         _buildSignUpLink(),
@@ -277,28 +351,24 @@ class _SplashLoginSignupScreenState extends State<SplashLoginSignupScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        const SizedBox(height: 48),
+        const Text('Create Account', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Color(0xFF232531))),
+        const SizedBox(height: 8),
+        const Text('Sign up to get started', style: TextStyle(color: Color(0xFF6C63FF), fontSize: 16)),
         const SizedBox(height: 32),
-        const Text('Sign up with Email', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 8),
-        const Text('Create account !', style: TextStyle(color: Colors.white54)),
-        const SizedBox(height: 32),
-        const Text('Email'),
-        const SizedBox(height: 8),
-        _buildEmailField(),
-        const SizedBox(height: 16),
-        const Text('Password'),
-        const SizedBox(height: 8),
-        _buildPasswordField(),
-        const SizedBox(height: 16),
-        const Text('Phone number'),
-        const SizedBox(height: 8),
-        TextField(
-          decoration: const InputDecoration(
-            labelText: 'Phone number',
-            hintText: 'Type yours phone number',
-            prefixIcon: Icon(Icons.phone, color: Colors.white54),
+        _buildInputField(icon: Icons.email_outlined, hint: 'Email', controller: _emailController, keyboardType: TextInputType.emailAddress),
+        _buildInputField(
+          icon: Icons.lock_outline,
+          hint: 'Password',
+          obscure: _obscurePassword,
+          controller: _passwordController,
+          suffixIcon: IconButton(
+            icon: Icon(
+              _obscurePassword ? Icons.visibility_off : Icons.visibility,
+              color: const Color(0xFFBDBDBD),
+            ),
+            onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
           ),
-          keyboardType: TextInputType.phone,
         ),
         const SizedBox(height: 16),
         Row(
@@ -308,11 +378,12 @@ class _SplashLoginSignupScreenState extends State<SplashLoginSignupScreen> {
               onChanged: (val) {
                 setState(() { _agreedToTerms = val ?? false; });
               },
+              activeColor: const Color(0xFF6C63FF),
             ),
-            const Text('Have to agree with our '),
+            const Text('I agree to the '),
             GestureDetector(
               onTap: () {},
-              child: const Text('Terms & conditions', style: TextStyle(color: Color(0xFF00E0FF))),
+              child: const Text('Terms & Conditions', style: TextStyle(color: Color(0xFF6C63FF), fontWeight: FontWeight.bold)),
             ),
           ],
         ),
@@ -323,7 +394,6 @@ class _SplashLoginSignupScreenState extends State<SplashLoginSignupScreen> {
         _buildSignUpButton(),
         const SizedBox(height: 24),
         _buildDivider(),
-        const SizedBox(height: 24),
         _buildSocialButtons(),
         const SizedBox(height: 32),
         _buildSignInLink(),
@@ -331,22 +401,232 @@ class _SplashLoginSignupScreenState extends State<SplashLoginSignupScreen> {
     );
   }
 
+  Widget _buildInputField({required IconData icon, required String hint, bool obscure = false, TextEditingController? controller, Widget? suffixIcon, TextInputType? keyboardType}) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Color(0xFFE0E0E0), width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 4,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: TextField(
+        controller: controller,
+        obscureText: obscure,
+        keyboardType: keyboardType,
+        style: const TextStyle(color: Colors.black),
+        decoration: InputDecoration(
+          filled: true,
+          fillColor: Colors.white,
+          border: InputBorder.none,
+          prefixIcon: Icon(icon, color: Color(0xFFBDBDBD)),
+          hintText: hint,
+          hintStyle: TextStyle(color: Color(0xFFBDBDBD)),
+          suffixIcon: suffixIcon,
+          contentPadding: EdgeInsets.symmetric(vertical: 18),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
-            child: Column(
-              children: [
-                const SizedBox(height: 24),
-                _buildTabBar(),
-                _tabIndex == 0 ? _buildSignInForm() : _buildSignUpForm(),
-              ],
+      backgroundColor: Colors.white,
+      body: Stack(
+        children: [
+          // Full background image that covers the entire screen
+          Positioned.fill(
+            child: Image.asset(
+              'assets/bg 1.png',
+              fit: BoxFit.cover,
+              alignment: Alignment.topCenter,
             ),
           ),
-        ),
+          // Main content
+          SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const SizedBox(height: 40),
+                      // Logo
+                      Center(
+                        child: Image.asset(
+                          'assets/Group 1.png',
+                          height: 70,
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      // Heading
+                      Text(
+                        _tabIndex == 0 ? 'Sign In' : 'Sign Up',
+                        style: const TextStyle(
+                          color: Color(0xFF2196F3),
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        _tabIndex == 0
+                            ? 'Enter valid username and password to continue'
+                            : 'User proper information to continue',
+                        style: const TextStyle(
+                          color: Color(0xFF8D8D8D),
+                          fontSize: 15,
+                          fontWeight: FontWeight.w400,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 28),
+                      // Form fields
+                      if (_tabIndex == 0) ...[
+                        // Email
+                        _buildInputField(icon: Icons.email_outlined, hint: 'Email', controller: _emailController, keyboardType: TextInputType.emailAddress),
+                        // Password
+                        _buildInputField(icon: Icons.lock_outline, hint: 'Password', obscure: _obscurePassword, controller: _passwordController, suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                            color: const Color(0xFFBDBDBD),
+                          ),
+                          onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                        )),
+                        const SizedBox(height: 8),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: _isLoading ? null : _login,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF2196F3),
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              minimumSize: const Size.fromHeight(52),
+                              textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+                            ),
+                            child: _isLoading
+                                ? const CircularProgressIndicator(color: Colors.white)
+                                : const Text('Login'),
+                          ),
+                        ),
+                      ] else ...[
+                        // Email
+                        _buildInputField(icon: Icons.email_outlined, hint: 'Email', controller: _emailController, keyboardType: TextInputType.emailAddress),
+                        // Password
+                        _buildInputField(icon: Icons.lock_outline, hint: 'Password', obscure: _obscurePassword, controller: _passwordController, suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                            color: const Color(0xFFBDBDBD),
+                          ),
+                          onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                        )),
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: _isLoading ? null : _signup,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF2196F3),
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              minimumSize: const Size.fromHeight(52),
+                              textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+                            ),
+                            child: _isLoading
+                                ? const CircularProgressIndicator(color: Colors.white)
+                                : const Text('Create Account'),
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          const Expanded(child: Divider(color: Color(0xFF6C63FF), thickness: 1)),
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 8.0),
+                            child: Text('or', style: TextStyle(color: Colors.grey[600], fontWeight: FontWeight.w600)),
+                          ),
+                          const Expanded(child: Divider(color: Color(0xFF6C63FF), thickness: 1)),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: Color(0xFF232531),
+                            side: BorderSide(color: Color(0xFF6C63FF), width: 2),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            minimumSize: Size.fromHeight(56),
+                            textStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                          ),
+                          icon: Image.asset('assets/google.png', width: 24, height: 24),
+                          label: Text('Continue with Google'),
+                          onPressed: _isLoading ? null : _signInWithGoogle,
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+                      if (_tabIndex == 0)
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Text(
+                              "Don't have an Account? ",
+                              style: TextStyle(color: Color(0xFF8D8D8D), fontSize: 15),
+                            ),
+                            GestureDetector(
+                              onTap: () => setState(() => _tabIndex = 1),
+                              child: const Text(
+                                'Sign Up',
+                                style: TextStyle(
+                                  color: Color(0xFF2196F3),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                ),
+                              ),
+                            ),
+                          ],
+                        )
+                      else
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Text(
+                              'Already have an Account? ',
+                              style: TextStyle(color: Color(0xFF8D8D8D), fontSize: 15),
+                            ),
+                            GestureDetector(
+                              onTap: () => setState(() => _tabIndex = 0),
+                              child: const Text(
+                                'Sign In',
+                                style: TextStyle(
+                                  color: Color(0xFF2196F3),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      const SizedBox(height: 80),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -1,0 +1,1709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏋️ Fitness Tracker - AI Pose Detection</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        /* User Setup */
+        .user-setup {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 60vh;
+        }
+
+        .setup-card {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            min-width: 300px;
+        }
+
+        .setup-card h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .setup-card input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            margin-bottom: 20px;
+            transition: border-color 0.3s ease;
+        }
+
+        .setup-card input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        /* Exercise Selection */
+        .exercise-selection {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            margin-bottom: 20px;
+        }
+
+        .exercise-selection h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+        }
+
+        .exercise-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .exercise-card {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: white;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .exercise-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .exercise-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+
+        .exercise-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+
+        .exercise-card p {
+            opacity: 0.9;
+        }
+
+        /* Workout Interface */
+        .workout-interface {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        /* Stats Panel */
+        .stats-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .stat-card {
+            text-align: center;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Camera Container */
+        .camera-container {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #000;
+            min-height: 400px;
+        }
+
+        #videoElement {
+            max-width: 100%;
+            max-height: 500px;
+            border-radius: 10px;
+        }
+
+        #canvasElement {
+            position: absolute;
+            top: 0;
+            left: 0;
+            max-width: 100%;
+            max-height: 500px;
+            pointer-events: none;
+        }
+
+        /* Enhanced Pose Feedback */
+        .pose-feedback {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            max-width: 90%;
+            min-width: 300px;
+        }
+
+        .feedback-text {
+            font-size: 1.1rem;
+            text-align: center;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .detailed-feedback {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 10px;
+            margin-top: 10px;
+        }
+
+        .feedback-item {
+            display: flex;
+            align-items: center;
+            margin: 5px 0;
+            font-size: 0.9rem;
+        }
+
+        .feedback-icon {
+            margin-right: 8px;
+            font-size: 1.2rem;
+        }
+
+        .feedback-good {
+            color: #4CAF50;
+        }
+
+        .feedback-warning {
+            color: #FF9800;
+        }
+
+        .feedback-error {
+            color: #F44336;
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            padding: 20px;
+            flex-wrap: wrap;
+        }
+
+        /* Instructions */
+        .instructions {
+            padding: 20px;
+            background: #f8f9fa;
+            border-top: 1px solid #dee2e6;
+        }
+
+        .instructions h3 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .instructions p {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        /* Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-content h2 {
+            margin-bottom: 30px;
+            color: #333;
+        }
+
+        .results-summary {
+            margin-bottom: 30px;
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .result-label {
+            font-weight: 600;
+            color: #666;
+        }
+
+        .result-value {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        /* Stats View */
+        .stats-view {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .stats-view h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stats-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stats-card h3 {
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+
+        .stats-card .stats-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stats-card .stats-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        /* Loading */
+        .loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Error Message */
+        .error-message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #ff6b6b;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            max-width: 400px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .stats-panel {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .btn {
+                width: 100%;
+                max-width: 200px;
+            }
+
+            .modal-actions {
+                flex-direction: column;
+            }
+
+            .pose-feedback {
+                min-width: 250px;
+                font-size: 0.9rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .exercise-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-panel {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+    
+    <!-- MediaPipe and TensorFlow.js - Updated CDN links -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection@2.1.0/dist/pose-detection.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/pose.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1640029074/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils@0.3.1620248257/drawing_utils.js" crossorigin="anonymous"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>🏋️ AI Fitness Tracker</h1>
+            <p>Real-time pose detection with detailed form feedback</p>
+        </header>
+
+        <!-- User Setup -->
+        <div class="user-setup" id="userSetup">
+            <div class="setup-card">
+                <h2>👤 User Setup</h2>
+                <input type="text" id="userId" placeholder="Enter your user ID" value="user123">
+                <button onclick="startApp()" class="btn btn-primary">Start Workout</button>
+            </div>
+        </div>
+
+        <!-- Main App -->
+        <div class="main-app" id="mainApp" style="display: none;">
+            <!-- Exercise Selection -->
+            <div class="exercise-selection" id="exerciseSelection">
+                <h2>Choose Your Exercise</h2>
+                <div class="exercise-grid">
+                    <div class="exercise-card" onclick="selectExercise('pushup')">
+                        <div class="exercise-icon">💪</div>
+                        <h3>Push-ups</h3>
+                        <p>Upper body strength</p>
+                    </div>
+                    <div class="exercise-card" onclick="selectExercise('squat')">
+                        <div class="exercise-icon">🦵</div>
+                        <h3>Squats</h3>
+                        <p>Lower body power</p>
+                    </div>
+                    <div class="exercise-card" onclick="selectExercise('pullup')">
+                        <div class="exercise-icon">🤸</div>
+                        <h3>Pull-ups</h3>
+                        <p>Upper body pull</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Workout Interface -->
+            <div class="workout-interface" id="workoutInterface" style="display: none;">
+                <!-- Stats Panel -->
+                <div class="stats-panel">
+                    <div class="stat-card">
+                        <div class="stat-value" id="repCount">0</div>
+                        <div class="stat-label">Reps</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="accuracyScore">0%</div>
+                        <div class="stat-label">Accuracy</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="currentState">Ready</div>
+                        <div class="stat-label">State</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="workoutTime">00:00</div>
+                        <div class="stat-label">Time</div>
+                    </div>
+                </div>
+
+                <!-- Camera and Canvas -->
+                <div class="camera-container">
+                    <video id="videoElement" autoplay muted playsinline></video>
+                    <canvas id="canvasElement"></canvas>
+                    <div class="pose-feedback" id="poseFeedback">
+                        <div class="feedback-text" id="feedbackText">Position yourself in the camera view</div>
+                        <div class="detailed-feedback" id="detailedFeedback">
+                            <!-- Detailed feedback will be populated here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Controls -->
+                <div class="controls">
+                    <button onclick="startWorkout()" id="startBtn" class="btn btn-success">Start Workout</button>
+                    <button onclick="pauseWorkout()" id="pauseBtn" class="btn btn-warning" style="display: none;">Pause</button>
+                    <button onclick="stopWorkout()" id="stopBtn" class="btn btn-danger" style="display: none;">Stop & Save</button>
+                    <button onclick="backToSelection()" class="btn btn-secondary">Back to Exercises</button>
+                </div>
+
+                <!-- Exercise Instructions -->
+                <div class="instructions" id="instructions">
+                    <h3>Instructions</h3>
+                    <p id="instructionText">Select an exercise to see instructions</p>
+                </div>
+            </div>
+
+            <!-- Results Modal -->
+            <div class="modal" id="resultsModal" style="display: none;">
+                <div class="modal-content">
+                    <h2>🎉 Workout Complete!</h2>
+                    <div class="results-summary">
+                        <div class="result-item">
+                            <span class="result-label">Exercise:</span>
+                            <span class="result-value" id="resultExercise">-</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">Total Reps:</span>
+                            <span class="result-value" id="resultReps">-</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">Average Accuracy:</span>
+                            <span class="result-value" id="resultAccuracy">-</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">Duration:</span>
+                            <span class="result-value" id="resultDuration">-</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">Calories Burned:</span>
+                            <span class="result-value" id="resultCalories">-</span>
+                        </div>
+                    </div>
+                    <div class="modal-actions">
+                        <button onclick="closeResults()" class="btn btn-primary">Continue</button>
+                        <button onclick="viewStats()" class="btn btn-secondary">View Stats</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Panel -->
+            <div class="stats-view" id="statsView" style="display: none;">
+                <h2>📊 Your Statistics</h2>
+                <div class="stats-grid" id="statsGrid">
+                    <!-- Stats will be populated by JavaScript -->
+                </div>
+                <button onclick="backToSelection()" class="btn btn-primary">Back to Exercises</button>
+            </div>
+        </div>
+
+        <!-- Loading Indicator -->
+        <div class="loading" id="loading" style="display: none;">
+            <div class="spinner"></div>
+            <p>Loading MediaPipe...</p>
+        </div>
+
+        <!-- Error Messages -->
+        <div class="error-message" id="errorMessage" style="display: none;">
+            <p id="errorText"></p>
+            <button onclick="hideError()" class="btn btn-secondary">Close</button>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let detector = null
+        const camera = null
+        let currentUserId = ""
+        let currentExercise = ""
+        let isWorkoutActive = false
+        let workoutStartTime = null
+        let repCount = 0
+        let accuracyScores = []
+        let repDetails = []
+        let currentState = "ready"
+        let lastState = "ready"
+        let stateTransitionTime = 0
+        let workoutTimer = null
+        let videoElement = null
+        let canvasElement = null
+        let canvasCtx = null
+
+        // API Configuration
+        const API_BASE_URL = "http://localhost:5000/api"
+
+        // Exercise configurations
+        const EXERCISE_CONFIG = {
+            pushup: {
+                name: "Push-ups",
+                instructions: "Keep your body straight, lower until your chest nearly touches the ground, then push back up. Keep your core engaged and elbows close to your body.",
+                keyPoints: [11, 12, 13, 14, 15, 16],
+                anglePoints: {
+                    leftElbow: [11, 13, 15],
+                    rightElbow: [12, 14, 16],
+                },
+                thresholds: {
+                    up: 160,
+                    down: 90,
+                },
+            },
+            squat: {
+                name: "Squats",
+                instructions: "Stand with feet shoulder-width apart, lower your body as if sitting back into a chair, then stand back up. Keep your knees aligned with your toes.",
+                keyPoints: [23, 24, 25, 26, 27, 28],
+                anglePoints: {
+                    leftKnee: [23, 25, 27],
+                    rightKnee: [24, 26, 28],
+                },
+                thresholds: {
+                    up: 160,
+                    down: 90,
+                },
+            },
+            pullup: {
+                name: "Pull-ups",
+                instructions: "Hang from the bar with arms extended, pull your body up until your chin is over the bar, then lower back down. Keep your core tight.",
+                keyPoints: [11, 12, 13, 14, 15, 16],
+                anglePoints: {
+                    leftElbow: [11, 13, 15],
+                    rightElbow: [12, 14, 16],
+                },
+                thresholds: {
+                    up: 160,
+                    down: 90,
+                },
+            },
+        }
+
+        // Initialize the app
+        function startApp() {
+            const userIdInput = document.getElementById("userId")
+            currentUserId = userIdInput.value.trim()
+
+            if (!currentUserId) {
+                showError("Please enter a user ID")
+                return
+            }
+
+            document.getElementById("userSetup").style.display = "none"
+            document.getElementById("mainApp").style.display = "block"
+
+            initializeCamera()
+        }
+
+        // Initialize camera and pose detection
+        async function initializeCamera() {
+            showLoading(true)
+
+            try {
+                videoElement = document.getElementById("videoElement")
+                canvasElement = document.getElementById("canvasElement")
+                canvasCtx = canvasElement.getContext("2d")
+
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    throw new Error("Camera access is not supported in this browser")
+                }
+
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        width: { ideal: 640 },
+                        height: { ideal: 480 },
+                        facingMode: "user",
+                    },
+                    audio: false,
+                })
+
+                videoElement.srcObject = stream
+
+                await new Promise((resolve) => {
+                    videoElement.onloadedmetadata = () => {
+                        videoElement.play()
+                        resolve()
+                    }
+                })
+
+                canvasElement.width = videoElement.videoWidth || 640
+                canvasElement.height = videoElement.videoHeight || 480
+
+                await initializePoseDetection()
+
+                showLoading(false)
+                console.log("Camera and pose detection initialized successfully")
+
+                document.getElementById("feedbackText").textContent = "Camera ready! Select an exercise to begin."
+            } catch (error) {
+                console.error("Error initializing camera:", error)
+                showLoading(false)
+
+                if (error.name === "NotAllowedError") {
+                    showError("Camera access denied. Please allow camera access and refresh the page.")
+                } else if (error.name === "NotFoundError") {
+                    showError("No camera found. Please connect a camera and refresh the page.")
+                } else {
+                    showError(`Camera initialization failed: ${error.message}`)
+                }
+            }
+        }
+
+        // Initialize TensorFlow.js pose detection
+        async function initializePoseDetection() {
+            try {
+                const tf = window.tf
+                await tf.ready()
+
+                const poseDetection = window.poseDetection
+                detector = await poseDetection.createDetector(poseDetection.SupportedModels.MoveNet, {
+                    modelType: poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING,
+                })
+
+                detectPose()
+                console.log("Pose detection initialized")
+            } catch (error) {
+                console.error("Error initializing pose detection:", error)
+                try {
+                    await initializeMediaPipe()
+                } catch (mpError) {
+                    console.error("MediaPipe fallback also failed:", mpError)
+                    showError("Pose detection initialization failed. Please refresh the page.")
+                }
+            }
+        }
+
+        // Fallback MediaPipe initialization
+        async function initializeMediaPipe() {
+            const Pose = window.Pose
+            if (typeof Pose === "undefined") {
+                throw new Error("MediaPipe not loaded")
+            }
+
+            const pose = new Pose({
+                locateFile: (file) => {
+                    return `https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/${file}`
+                },
+            })
+
+            pose.setOptions({
+                modelComplexity: 1,
+                smoothLandmarks: true,
+                enableSegmentation: false,
+                smoothSegmentation: false,
+                minDetectionConfidence: 0.5,
+                minTrackingConfidence: 0.5,
+            })
+
+            pose.onResults(onMediaPipeResults)
+
+            const Camera = window.Camera
+            const camera = new Camera(videoElement, {
+                onFrame: async () => {
+                    if (pose) {
+                        await pose.send({ image: videoElement })
+                    }
+                },
+                width: 640,
+                height: 480,
+            })
+
+            await camera.start()
+            console.log("MediaPipe fallback initialized")
+        }
+
+        // TensorFlow.js pose detection loop
+        async function detectPose() {
+            if (!detector || !videoElement) return
+
+            try {
+                const poses = await detector.estimatePoses(videoElement)
+
+                if (poses && poses.length > 0) {
+                    const pose = poses[0]
+                    const landmarks = convertTFPoseToMediaPipe(pose.keypoints)
+                    onPoseResults({ poseLandmarks: landmarks })
+                }
+            } catch (error) {
+                console.error("Error in pose detection:", error)
+            }
+
+            requestAnimationFrame(detectPose)
+        }
+
+        // Convert TensorFlow.js pose format to MediaPipe format
+        function convertTFPoseToMediaPipe(keypoints) {
+            const landmarks = new Array(33).fill(null)
+
+            const keypointMap = {
+                0: 0, 1: 2, 2: 5, 3: 7, 4: 8, 5: 11, 6: 12, 7: 13, 8: 14, 9: 15, 10: 16, 11: 23, 12: 24, 13: 25, 14: 26, 15: 27, 16: 28,
+            }
+
+            keypoints.forEach((keypoint, index) => {
+                const mpIndex = keypointMap[index]
+                if (mpIndex !== undefined && keypoint.score > 0.3) {
+                    landmarks[mpIndex] = {
+                        x: keypoint.x / videoElement.videoWidth,
+                        y: keypoint.y / videoElement.videoHeight,
+                        z: keypoint.z || 0,
+                        visibility: keypoint.score,
+                    }
+                }
+            })
+
+            return landmarks.filter((landmark) => landmark !== null)
+        }
+
+        // Handle MediaPipe pose results
+        function onMediaPipeResults(results) {
+            onPoseResults(results)
+        }
+
+        // Handle pose detection results
+        function onPoseResults(results) {
+            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height)
+
+            if (results.poseLandmarks && results.poseLandmarks.length > 0 && isWorkoutActive) {
+                drawPose(results.poseLandmarks)
+                analyzeExercise(results.poseLandmarks)
+            }
+        }
+
+        // Draw pose landmarks on canvas
+        function drawPose(landmarks) {
+            const connections = [
+                [11, 12], [11, 13], [13, 15], [12, 14], [14, 16],
+                [11, 23], [12, 24], [23, 24],
+                [23, 25], [25, 27], [24, 26], [26, 28],
+            ]
+
+            canvasCtx.strokeStyle = "#00FF00"
+            canvasCtx.lineWidth = 2
+
+            connections.forEach(([start, end]) => {
+                const startPoint = landmarks[start]
+                const endPoint = landmarks[end]
+
+                if (startPoint && endPoint) {
+                    canvasCtx.beginPath()
+                    canvasCtx.moveTo(startPoint.x * canvasElement.width, startPoint.y * canvasElement.height)
+                    canvasCtx.lineTo(endPoint.x * canvasElement.width, endPoint.y * canvasElement.height)
+                    canvasCtx.stroke()
+                }
+            })
+
+            canvasCtx.fillStyle = "#FF0000"
+            landmarks.forEach((landmark, index) => {
+                if (landmark && (landmark.visibility || 1) > 0.5) {
+                    canvasCtx.beginPath()
+                    canvasCtx.arc(landmark.x * canvasElement.width, landmark.y * canvasElement.height, 3, 0, 2 * Math.PI)
+                    canvasCtx.fill()
+                }
+            })
+        }
+
+        // Analyze exercise with detailed feedback
+        function analyzeExercise(landmarks) {
+            if (!currentExercise || !EXERCISE_CONFIG[currentExercise]) return
+
+            const config = EXERCISE_CONFIG[currentExercise]
+            const angles = calculateAngles(landmarks, config.anglePoints)
+
+            if (Object.keys(angles).length === 0) {
+                updateDetailedFeedback([
+                    { type: 'error', icon: '❌', message: 'Cannot detect your pose clearly' },
+                    { type: 'warning', icon: '⚠️', message: 'Move closer to camera or improve lighting' }
+                ])
+                return
+            }
+
+            const avgAngle = Object.values(angles).reduce((sum, angle) => sum + angle, 0) / Object.values(angles).length
+
+            // Determine current state
+            let newState = "middle"
+            if (avgAngle > config.thresholds.up) {
+                newState = "up"
+            } else if (avgAngle < config.thresholds.down) {
+                newState = "down"
+            }
+
+            // Generate detailed feedback
+            const feedback = generateDetailedFeedback(angles, landmarks, config, newState)
+            updateDetailedFeedback(feedback)
+
+            // Check for rep completion
+            if (checkRepCompletion(newState)) {
+                const accuracy = calculateAccuracy(angles, config)
+                recordRep(accuracy, angles)
+            }
+
+            currentState = newState
+            updateUI()
+            updateFeedback(avgAngle, config)
+        }
+
+        // Generate detailed posture feedback
+        function generateDetailedFeedback(angles, landmarks, config, state) {
+            const feedback = []
+
+            if (currentExercise === 'pushup') {
+                // Check elbow angles
+                if (angles.leftElbow && angles.rightElbow) {
+                    const elbowDiff = Math.abs(angles.leftElbow - angles.rightElbow)
+                    const avgElbow = (angles.leftElbow + angles.rightElbow) / 2
+
+                    if (elbowDiff > 20) {
+                        feedback.push({
+                            type: 'error',
+                            icon: '❌',
+                            message: `Uneven arms: Left ${Math.round(angles.leftElbow)}°, Right ${Math.round(angles.rightElbow)}°`
+                        })
+                    } else {
+                        feedback.push({
+                            type: 'good',
+                            icon: '✅',
+                            message: `Arms aligned well (${Math.round(avgElbow)}°)`
+                        })
+                    }
+
+                    // Check if elbows are too wide
+                    if (avgElbow < 45 && state === 'down') {
+                        feedback.push({
+                            type: 'warning',
+                            icon: '⚠️',
+                            message: 'Elbows too wide - keep them closer to body'
+                        })
+                    }
+
+                    // Check depth
+                    if (state === 'down' && avgElbow > 100) {
+                        feedback.push({
+                            type: 'warning',
+                            icon: '⚠️',
+                            message: 'Go lower - chest should nearly touch ground'
+                        })
+                    } else if (state === 'down' && avgElbow <= 90) {
+                        feedback.push({
+                            type: 'good',
+                            icon: '✅',
+                            message: 'Perfect depth!'
+                        })
+                    }
+                }
+
+                // Check body alignment
+                const shoulder = landmarks[11]
+                const hip = landmarks[23]
+                const ankle = landmarks[27]
+
+                if (shoulder && hip && ankle) {
+                    const bodyAngle = calculateAngle(shoulder, hip, ankle)
+                    if (bodyAngle < 160) {
+                        feedback.push({
+                            type: 'error',
+                            icon: '❌',
+                            message: 'Keep your body straight - no sagging hips'
+                        })
+                    } else {
+                        feedback.push({
+                            type: 'good',
+                            icon: '✅',
+                            message: 'Good body alignment'
+                        })
+                    }
+                }
+
+            } else if (currentExercise === 'squat') {
+                // Check knee angles
+                if (angles.leftKnee && angles.rightKnee) {
+                    const kneeDiff = Math.abs(angles.leftKnee - angles.rightKnee)
+                    const avgKnee = (angles.leftKnee + angles.rightKnee) / 2
+
+                    if (kneeDiff > 15) {
+                        feedback.push({
+                            type: 'error',
+                            icon: '❌',
+                            message: `Uneven legs: Left ${Math.round(angles.leftKnee)}°, Right ${Math.round(angles.rightKnee)}°`
+                        })
+                    } else {
+                        feedback.push({
+                            type: 'good',
+                            icon: '✅',
+                            message: `Legs aligned well (${Math.round(avgKnee)}°)`
+                        })
+                    }
+
+                    // Check squat depth
+                    if (state === 'down' && avgKnee > 100) {
+                        feedback.push({
+                            type: 'warning',
+                            icon: '⚠️',
+                            message: 'Go deeper - thighs should be parallel to ground'
+                        })
+                    } else if (state === 'down' && avgKnee <= 90) {
+                        feedback.push({
+                            type: 'good',
+                            icon: '✅',
+                            message: 'Perfect squat depth!'
+                        })
+                    }
+                }
+
+                // Check knee alignment
+                const leftKnee = landmarks[25]
+                const rightKnee = landmarks[26]
+                const leftAnkle = landmarks[27]
+                const rightAnkle = landmarks[28]
+
+                if (leftKnee && rightKnee && leftAnkle && rightAnkle) {
+                    const leftKneeAlignment = Math.abs(leftKnee.x - leftAnkle.x)
+                    const rightKneeAlignment = Math.abs(rightKnee.x - rightAnkle.x)
+
+                    if (leftKneeAlignment > 0.1 || rightKneeAlignment > 0.1) {
+                        feedback.push({
+                            type: 'error',
+                            icon: '❌',
+                            message: 'Knees caving in - keep them aligned over toes'
+                        })
+                    } else {
+                        feedback.push({
+                            type: 'good',
+                            icon: '✅',
+                            message: 'Good knee tracking'
+                        })
+                    }
+                }
+
+                // Check back posture
+                const shoulder = landmarks[11]
+                const hip = landmarks[23]
+
+                if (shoulder && hip) {
+                    const backAngle = Math.atan2(shoulder.y - hip.y, shoulder.x - hip.x) * 180 / Math.PI
+                    if (Math.abs(backAngle) > 30) {
+                        feedback.push({
+                            type: 'warning',
+                            icon: '⚠️',
+                            message: 'Keep chest up - avoid leaning too far forward'
+                        })
+                    } else {
+                        feedback.push({
+                            type: 'good',
+                            icon: '✅',
+                            message: 'Good posture'
+                        })
+                    }
+                }
+
+            } else if (currentExercise === 'pullup') {
+                // Check elbow angles
+                if (angles.leftElbow && angles.rightElbow) {
+                    const elbowDiff = Math.abs(angles.leftElbow - angles.rightElbow)
+                    const avgElbow = (angles.leftElbow + angles.rightElbow) / 2
+
+                    if (elbowDiff > 25) {
+                        feedback.push({
+                            type: 'error',
+                            icon: '❌',
+                            message: `Uneven pull: Left ${Math.round(angles.leftElbow)}°, Right ${Math.round(angles.rightElbow)}°`
+                        })
+                    } else {
+                        feedback.push({
+                            type: 'good',
+                            icon: '✅',
+                            message: `Even pull (${Math.round(avgElbow)}°)`
+                        })
+                    }
+
+                    // Check pull-up range
+                    if (state === 'up' && avgElbow > 120) {
+                        feedback.push({
+                            type: 'warning',
+                            icon: '⚠️',
+                            message: 'Pull higher - chin should go over bar'
+                        })
+                    } else if (state === 'up' && avgElbow <= 90) {
+                        feedback.push({
+                            type: 'good',
+                            icon: '✅',
+                            message: 'Great pull-up height!'
+                        })
+                    }
+
+                    if (state === 'down' && avgElbow < 160) {
+                        feedback.push({
+                            type: 'warning',
+                            icon: '⚠️',
+                            message: 'Extend arms fully at bottom'
+                        })
+                    }
+                }
+
+                // Check body swing
+                const shoulder = landmarks[11]
+                const hip = landmarks[23]
+
+                if (shoulder && hip) {
+                    const swingAngle = Math.atan2(hip.x - shoulder.x, hip.y - shoulder.y) * 180 / Math.PI
+                    if (Math.abs(swingAngle) > 15) {
+                        feedback.push({
+                            type: 'warning',
+                            icon: '⚠️',
+                            message: 'Minimize body swing - keep core tight'
+                        })
+                    } else {
+                        feedback.push({
+                            type: 'good',
+                            icon: '✅',
+                            message: 'Good control - minimal swing'
+                        })
+                    }
+                }
+            }
+
+            // Add state-specific feedback
+            if (state === 'up') {
+                feedback.unshift({
+                    type: 'good',
+                    icon: '⬆️',
+                    message: 'Top position - now go down slowly'
+                })
+            } else if (state === 'down') {
+                feedback.unshift({
+                    type: 'good',
+                    icon: '⬇️',
+                    message: 'Bottom position - now push/pull up'
+                })
+            } else {
+                feedback.unshift({
+                    type: 'warning',
+                    icon: '🔄',
+                    message: 'In transition - keep good form'
+                })
+            }
+
+            return feedback
+        }
+
+        // Update detailed feedback display
+        function updateDetailedFeedback(feedbackItems) {
+            const detailedFeedback = document.getElementById('detailedFeedback')
+            detailedFeedback.innerHTML = ''
+
+            feedbackItems.forEach(item => {
+                const feedbackItem = document.createElement('div')
+                feedbackItem.className = `feedback-item feedback-${item.type}`
+                feedbackItem.innerHTML = `
+                    <span class="feedback-icon">${item.icon}</span>
+                    <span>${item.message}</span>
+                `
+                detailedFeedback.appendChild(feedbackItem)
+            })
+        }
+
+        // Calculate angles between three points
+        function calculateAngles(landmarks, anglePoints) {
+            const angles = {}
+
+            for (const [angleName, points] of Object.entries(anglePoints)) {
+                const [p1Index, p2Index, p3Index] = points
+                const p1 = landmarks[p1Index]
+                const p2 = landmarks[p2Index]
+                const p3 = landmarks[p3Index]
+
+                if (p1 && p2 && p3 && (p1.visibility || 1) > 0.5 && (p2.visibility || 1) > 0.5 && (p3.visibility || 1) > 0.5) {
+                    angles[angleName] = calculateAngle(p1, p2, p3)
+                }
+            }
+
+            return angles
+        }
+
+        // Calculate angle between three points
+        function calculateAngle(a, b, c) {
+            const radians = Math.atan2(c.y - b.y, c.x - b.x) - Math.atan2(a.y - b.y, a.x - b.x)
+            let angle = Math.abs((radians * 180.0) / Math.PI)
+
+            if (angle > 180.0) {
+                angle = 360.0 - angle
+            }
+
+            return angle
+        }
+
+        // Check if a rep is completed
+        function checkRepCompletion(newState) {
+            const now = Date.now()
+
+            if (now - stateTransitionTime < 800) {
+                return false
+            }
+
+            if (lastState === "down" && newState === "up") {
+                lastState = newState
+                stateTransitionTime = now
+                return true
+            }
+
+            if (newState !== currentState) {
+                lastState = currentState
+                stateTransitionTime = now
+            }
+
+            return false
+        }
+
+        // Calculate form accuracy
+        function calculateAccuracy(angles, config) {
+            let accuracy = 100
+
+            const angleValues = Object.values(angles)
+            if (angleValues.length > 1) {
+                const avgAngle = angleValues.reduce((sum, angle) => sum + angle, 0) / angleValues.length
+                const variance = angleValues.reduce((sum, angle) => sum + Math.pow(angle - avgAngle, 2), 0) / angleValues.length
+
+                if (variance > 100) {
+                    accuracy -= 20
+                } else if (variance > 50) {
+                    accuracy -= 10
+                }
+            }
+
+            if (currentExercise === "pushup") {
+                accuracy = calculatePushupAccuracy(angles, accuracy)
+            } else if (currentExercise === "squat") {
+                accuracy = calculateSquatAccuracy(angles, accuracy)
+            } else if (currentExercise === "pullup") {
+                accuracy = calculatePullupAccuracy(angles, accuracy)
+            }
+
+            return Math.max(0, Math.min(100, accuracy))
+        }
+
+        // Calculate pushup-specific accuracy
+        function calculatePushupAccuracy(angles, baseAccuracy) {
+            let accuracy = baseAccuracy
+
+            if (angles.leftElbow && angles.rightElbow) {
+                const elbowDiff = Math.abs(angles.leftElbow - angles.rightElbow)
+                if (elbowDiff > 20) {
+                    accuracy -= 15
+                }
+            }
+
+            return accuracy
+        }
+
+        // Calculate squat-specific accuracy
+        function calculateSquatAccuracy(angles, baseAccuracy) {
+            let accuracy = baseAccuracy
+
+            if (angles.leftKnee && angles.rightKnee) {
+                const kneeDiff = Math.abs(angles.leftKnee - angles.rightKnee)
+                if (kneeDiff > 15) {
+                    accuracy -= 15
+                }
+            }
+
+            return accuracy
+        }
+
+        // Calculate pullup-specific accuracy
+        function calculatePullupAccuracy(angles, baseAccuracy) {
+            let accuracy = baseAccuracy
+
+            if (angles.leftElbow && angles.rightElbow) {
+                const elbowDiff = Math.abs(angles.leftElbow - angles.rightElbow)
+                if (elbowDiff > 25) {
+                    accuracy -= 20
+                }
+            }
+
+            return accuracy
+        }
+
+        // Record a completed rep
+        function recordRep(accuracy, angles) {
+            repCount++
+            accuracyScores.push(accuracy)
+
+            repDetails.push({
+                repNumber: repCount,
+                accuracy: accuracy,
+                angles: angles,
+                timestamp: new Date(),
+            })
+
+            document.getElementById("repCount").textContent = repCount
+            const avgAccuracy = accuracyScores.reduce((sum, acc) => sum + acc, 0) / accuracyScores.length
+            document.getElementById("accuracyScore").textContent = `${Math.round(avgAccuracy)}%`
+
+            console.log(`Rep ${repCount} completed with ${Math.round(accuracy)}% accuracy`)
+
+            document.getElementById("feedbackText").textContent = `Great! Rep ${repCount} completed!`
+            document.getElementById("feedbackText").style.color = "#00FF00"
+
+            setTimeout(() => {
+                updateFeedback(null, EXERCISE_CONFIG[currentExercise])
+            }, 1000)
+        }
+
+        // Update feedback text
+        function updateFeedback(avgAngle, config) {
+            const feedbackElement = document.getElementById("feedbackText")
+
+            if (currentState === "up") {
+                feedbackElement.textContent = "Good position! Now go down"
+                feedbackElement.style.color = "#00FF00"
+            } else if (currentState === "down") {
+                feedbackElement.textContent = "Perfect! Now push/pull up"
+                feedbackElement.style.color = "#00FF00"
+            } else {
+                feedbackElement.textContent = "Keep going..."
+                feedbackElement.style.color = "#FFFF00"
+            }
+        }
+
+        // Update UI elements
+        function updateUI() {
+            document.getElementById("currentState").textContent = currentState.toUpperCase()
+
+            if (workoutStartTime) {
+                const elapsed = Math.floor((Date.now() - workoutStartTime) / 1000)
+                const minutes = Math.floor(elapsed / 60)
+                const seconds = elapsed % 60
+                document.getElementById("workoutTime").textContent =
+                    `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`
+            }
+        }
+
+        // Exercise selection
+        function selectExercise(exercise) {
+            currentExercise = exercise
+
+            document.getElementById("exerciseSelection").style.display = "none"
+            document.getElementById("workoutInterface").style.display = "block"
+
+            const config = EXERCISE_CONFIG[exercise]
+            document.getElementById("instructionText").textContent = config.instructions
+
+            resetWorkoutState()
+
+            console.log(`Selected exercise: ${exercise}`)
+        }
+
+        // Start workout
+        function startWorkout() {
+            if (!currentExercise) {
+                showError("Please select an exercise first")
+                return
+            }
+
+            if (!detector) {
+                showError("Pose detection not initialized. Please refresh the page.")
+                return
+            }
+
+            isWorkoutActive = true
+            workoutStartTime = Date.now()
+
+            document.getElementById("startBtn").style.display = "none"
+            document.getElementById("pauseBtn").style.display = "inline-block"
+            document.getElementById("stopBtn").style.display = "inline-block"
+
+            workoutTimer = setInterval(updateUI, 1000)
+
+            console.log(`Started ${currentExercise} workout`)
+            document.getElementById("feedbackText").textContent = "Workout started! Begin your exercise."
+        }
+
+        // Pause workout
+        function pauseWorkout() {
+            isWorkoutActive = false
+
+            document.getElementById("startBtn").style.display = "inline-block"
+            document.getElementById("startBtn").textContent = "Resume"
+            document.getElementById("pauseBtn").style.display = "none"
+
+            clearInterval(workoutTimer)
+
+            console.log("Workout paused")
+            document.getElementById("feedbackText").textContent = "Workout paused. Click Resume to continue."
+        }
+
+        // Stop workout and save
+        async function stopWorkout() {
+            if (repCount === 0) {
+                showError("No reps recorded. Complete at least one rep before stopping.")
+                return
+            }
+
+            isWorkoutActive = false
+            clearInterval(workoutTimer)
+
+            const duration = Math.floor((Date.now() - workoutStartTime) / 1000)
+            const avgAccuracy = accuracyScores.reduce((sum, acc) => sum + acc, 0) / accuracyScores.length
+
+            const workoutData = {
+                userId: currentUserId,
+                exerciseType: currentExercise,
+                repCount: repCount,
+                accuracyScore: Math.round(avgAccuracy * 100) / 100,
+                duration: duration,
+                repDetails: repDetails,
+                sessionMetadata: {
+                    deviceInfo: {
+                        userAgent: navigator.userAgent,
+                        screenResolution: `${screen.width}x${screen.height}`,
+                    },
+                    cameraResolution: {
+                        width: videoElement.videoWidth,
+                        height: videoElement.videoHeight,
+                    },
+                    averageConfidence: 0.8,
+                },
+            }
+
+            try {
+                showLoading(true)
+                const response = await saveWorkout(workoutData)
+                showLoading(false)
+
+                if (response.success) {
+                    showResults(workoutData, response.data)
+                } else {
+                    showError("Failed to save workout: " + response.message)
+                }
+            } catch (error) {
+                showLoading(false)
+                console.error("Error saving workout:", error)
+                showError("Failed to save workout. Please check if the backend server is running.")
+            }
+        }
+
+        // Save workout to backend
+        async function saveWorkout(workoutData) {
+            const response = await fetch(`${API_BASE_URL}/workout`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(workoutData),
+            })
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`)
+            }
+
+            return await response.json()
+        }
+
+        // Show workout results
+        function showResults(workoutData, savedData) {
+            document.getElementById("resultExercise").textContent = EXERCISE_CONFIG[workoutData.exerciseType].name
+            document.getElementById("resultReps").textContent = workoutData.repCount
+            document.getElementById("resultAccuracy").textContent = `${workoutData.accuracyScore}%`
+
+            const minutes = Math.floor(workoutData.duration / 60)
+            const seconds = workoutData.duration % 60
+            document.getElementById("resultDuration").textContent = `${minutes}:${seconds.toString().padStart(2, "0")}`
+
+            document.getElementById("resultCalories").textContent = `${savedData.caloriesBurned} cal`
+
+            document.getElementById("resultsModal").style.display = "flex"
+        }
+
+        // Close results modal
+        function closeResults() {
+            document.getElementById("resultsModal").style.display = "none"
+            backToSelection()
+        }
+
+        // View user statistics
+        async function viewStats() {
+            try {
+                showLoading(true)
+                const response = await fetch(`${API_BASE_URL}/workout/stats/${currentUserId}`)
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`)
+                }
+
+                const data = await response.json()
+                showLoading(false)
+
+                if (data.success) {
+                    displayStats(data.data)
+                } else {
+                    showError("Failed to load statistics: " + data.message)
+                }
+            } catch (error) {
+                showLoading(false)
+                console.error("Error loading stats:", error)
+                showError("Failed to load statistics. Please check if the backend server is running.")
+            }
+        }
+
+        // Display statistics
+        function displayStats(statsData) {
+            document.getElementById("resultsModal").style.display = "none"
+            document.getElementById("workoutInterface").style.display = "none"
+            document.getElementById("exerciseSelection").style.display = "none"
+            document.getElementById("statsView").style.display = "block"
+
+            const statsGrid = document.getElementById("statsGrid")
+            statsGrid.innerHTML = ""
+
+            const overallCard = createStatsCard("Overall Stats", [
+                { label: "Total Workouts", value: statsData.overview.totalWorkouts },
+                { label: "Total Reps", value: statsData.overview.totalReps },
+                { label: "Avg Accuracy", value: `${statsData.overview.averageAccuracy}%` },
+                { label: "Total Time", value: `${Math.floor(statsData.overview.totalDuration / 60)} min` },
+            ])
+            statsGrid.appendChild(overallCard)
+
+            statsData.exerciseBreakdown.forEach((exercise) => {
+                const card = createStatsCard(EXERCISE_CONFIG[exercise.exerciseType].name, [
+                    { label: "Workouts", value: exercise.totalWorkouts },
+                    { label: "Total Reps", value: exercise.totalReps },
+                    { label: "Avg Accuracy", value: `${exercise.averageAccuracy}%` },
+                    { label: "Best Accuracy", value: `${exercise.bestAccuracy}%` },
+                ])
+                statsGrid.appendChild(card)
+            })
+        }
+
+        // Create stats card
+        function createStatsCard(title, stats) {
+            const card = document.createElement("div")
+            card.className = "stats-card"
+
+            let html = `<h3>${title}</h3>`
+            stats.forEach((stat) => {
+                html += `
+                    <div class="stats-value">${stat.value}</div>
+                    <div class="stats-label">${stat.label}</div>
+                `
+            })
+
+            card.innerHTML = html
+            return card
+        }
+
+        // Back to exercise selection
+        function backToSelection() {
+            document.getElementById("workoutInterface").style.display = "none"
+            document.getElementById("statsView").style.display = "none"
+            document.getElementById("resultsModal").style.display = "none"
+
+            document.getElementById("exerciseSelection").style.display = "block"
+
+            resetWorkoutState()
+        }
+
+        // Reset workout state
+        function resetWorkoutState() {
+            isWorkoutActive = false
+            workoutStartTime = null
+            repCount = 0
+            accuracyScores = []
+            repDetails = []
+            currentState = "ready"
+            lastState = "ready"
+
+            clearInterval(workoutTimer)
+
+            document.getElementById("repCount").textContent = "0"
+            document.getElementById("accuracyScore").textContent = "0%"
+            document.getElementById("currentState").textContent = "Ready"
+            document.getElementById("workoutTime").textContent = "00:00"
+            document.getElementById("feedbackText").textContent = "Ready to start your workout!"
+
+            document.getElementById("startBtn").style.display = "inline-block"
+            document.getElementById("startBtn").textContent = "Start Workout"
+            document.getElementById("pauseBtn").style.display = "none"
+            document.getElementById("stopBtn").style.display = "none"
+
+            // Clear detailed feedback
+            document.getElementById("detailedFeedback").innerHTML = ""
+        }
+
+        // Utility functions
+        function showLoading(show) {
+            document.getElementById("loading").style.display = show ? "flex" : "none"
+        }
+
+        function showError(message) {
+            document.getElementById("errorText").textContent = message
+            document.getElementById("errorMessage").style.display = "block"
+
+            setTimeout(() => {
+                hideError()
+            }, 8000)
+        }
+
+        function hideError() {
+            document.getElementById("errorMessage").style.display = "none"
+        }
+
+        // Initialize app when page loads
+        document.addEventListener("DOMContentLoaded", () => {
+            console.log("Fitness Tracker initialized")
+
+            if (!navigator.mediaDevices) {
+                showError("This browser doesn't support camera access. Please use Chrome, Firefox, or Safari.")
+            }
+        })
+    </script>
+</body>
+</html>

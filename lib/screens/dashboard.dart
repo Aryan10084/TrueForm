@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
-import 'live_workout.dart';
 import 'profile.dart';
 import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -44,151 +43,194 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: Stack(
-        children: [
-          // Top wavy background
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: Image.asset(
-              'assets/Layer_1.png',
-              width: screenWidth,
-              fit: BoxFit.fitWidth,
-            ),
-          ),
-          SafeArea(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // App bar
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.04, vertical: screenHeight * 0.015),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.arrow_back, color: Color(0xFF2196F3)),
-                        onPressed: () {}, // Placeholder
-                      ),
-                      Text(
-                        'Dashboard',
-                        style: TextStyle(
-                          color: Color(0xFF2196F3),
-                          fontWeight: FontWeight.bold,
-                          fontSize: screenWidth * 0.055,
-                        ),
-                      ),
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const ProfileScreen()),
-                          );
-                        },
-                        child: profileImage != null
-                            ? CircleAvatar(
-                                backgroundColor: Color(0xFFEAF6FF),
-                                radius: screenWidth * 0.06,
-                                backgroundImage: FileImage(profileImage!),
-                              )
-                            : const CircleAvatar(
-                                backgroundColor: Color(0xFFEAF6FF),
-                                radius: 20,
-                                child: Icon(Icons.person, color: Color(0xFF2196F3)),
-                              ),
-                      ),
-                    ],
-                  ),
-                ),
-                // Greeting
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.06, vertical: screenHeight * 0.01),
+    return Stack(
+      children: [
+        Scaffold(
+          backgroundColor: Colors.white,
+          body: Stack(
+            children: [
+              // Progress area at the top
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: Container(
+                  width: double.infinity,
+                  color: Colors.black.withOpacity(0.85),
+                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Good morning,', style: TextStyle(color: Colors.black54, fontSize: screenWidth * 0.045)),
-                      SizedBox(height: screenHeight * 0.003),
-                      Text(
-                        name.isNotEmpty ? name.capitalize() : '',
-                        style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: screenWidth * 0.06),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(strokeWidth: 3, color: Colors.white),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Text(
+                              'Checking pose model...',
+                              style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
                 ),
-                SizedBox(height: screenHeight * 0.015),
-                // Stat cards
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.04),
-                  child: Wrap(
-                    spacing: 12,
-                    runSpacing: 12,
-                    children: [
-                      _DashboardCard(
-                        color: Color(0xFFFFF3F3),
-                        borderColor: Color(0xFFFFC1C1),
-                        icon: Icons.local_fire_department,
-                        iconColor: Color(0xFFFF6B6B),
-                        title: 'Calories',
-                        subtitle: 'Great Physical activity',
-                        value: '700/1290Kcal',
-                        time: '1d',
-                      ),
-                      _DashboardCard(
-                        color: Color(0xFFFFFDE7),
-                        borderColor: Color(0xFFFFF59D),
-                        icon: Icons.verified,
-                        iconColor: Color(0xFFFFD600),
-                        title: 'Streak Breaks',
-                        subtitle: 'Healthy weight is 72-82kg',
-                        value: '198 lbs',
-                        time: '1d',
-                        extra: '6\'0"',
-                      ),
-                      _DashboardCard(
-                        color: Color(0xFFE3F6FF),
-                        borderColor: Color(0xFFB3E5FC),
-                        icon: Icons.timer,
-                        iconColor: Color(0xFF29B6F6),
-                        title: 'Sessions',
-                        subtitle: 'Full-body workout to boost strength',
-                        value: '30min/120kcal',
-                        time: '1d',
-                      ),
-                      _DashboardCard(
-                        color: Color(0xFFEDE7F6),
-                        borderColor: Color(0xFFD1C4E9),
-                        icon: Icons.bar_chart,
-                        iconColor: Color(0xFF7C4DFF),
-                        title: 'Posture Accuracy',
-                        subtitle: 'Measures how correctly your body aligns during exercise.',
-                        value: '30min/100 kcal',
-                        time: '1d',
-                      ),
-                    ],
-                  ),
+              ),
+              // Top wavy background
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: Image.asset(
+                  'assets/Layer_1.png',
+                  width: screenWidth,
+                  fit: BoxFit.fitWidth,
                 ),
-                const Spacer(),
-                // Individual bottom buttons
-                Padding(
-                  padding: EdgeInsets.only(bottom: screenHeight * 0.03, left: screenWidth * 0.08, right: screenWidth * 0.08),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      _BottomButton(icon: Icons.home, label: 'Home', selected: true, onTap: () {}),
-                      _BottomButton(icon: Icons.fitness_center, label: 'Workouts', onTap: () {}),
-                      _BottomButton(icon: Icons.menu_book, label: 'Tutorial', onTap: () {}),
-                      _BottomButton(icon: Icons.history, label: 'History', onTap: () {}),
-                    ],
-                  ),
+              ),
+              SafeArea(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // App bar
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.04, vertical: screenHeight * 0.015),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.arrow_back, color: Color(0xFF2196F3)),
+                            onPressed: () {}, // Placeholder
+                          ),
+                          Text(
+                            'Dashboard',
+                            style: TextStyle(
+                              color: Color(0xFF2196F3),
+                              fontWeight: FontWeight.bold,
+                              fontSize: screenWidth * 0.055,
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => const ProfileScreen()),
+                              );
+                            },
+                            child: profileImage != null
+                                ? CircleAvatar(
+                                    backgroundColor: Color(0xFFEAF6FF),
+                                    radius: screenWidth * 0.06,
+                                    backgroundImage: FileImage(profileImage!),
+                                  )
+                                : const CircleAvatar(
+                                    backgroundColor: Color(0xFFEAF6FF),
+                                    radius: 20,
+                                    child: Icon(Icons.person, color: Color(0xFF2196F3)),
+                                  ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Greeting
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.06, vertical: screenHeight * 0.01),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Good morning,', style: TextStyle(color: Colors.black54, fontSize: screenWidth * 0.045)),
+                          SizedBox(height: screenHeight * 0.003),
+                          Text(
+                            name.isNotEmpty ? name.capitalize() : '',
+                            style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: screenWidth * 0.06),
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: screenHeight * 0.015),
+                    // Stat cards
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.04),
+                      child: Wrap(
+                        spacing: 12,
+                        runSpacing: 12,
+                        children: [
+                          _DashboardCard(
+                            color: Color(0xFFFFF3F3),
+                            borderColor: Color(0xFFFFC1C1),
+                            icon: Icons.local_fire_department,
+                            iconColor: Color(0xFFFF6B6B),
+                            title: 'Calories',
+                            subtitle: 'Great Physical activity',
+                            value: '700/1290Kcal',
+                            time: '1d',
+                          ),
+                          _DashboardCard(
+                            color: Color(0xFFFFFDE7),
+                            borderColor: Color(0xFFFFF59D),
+                            icon: Icons.verified,
+                            iconColor: Color(0xFFFFD600),
+                            title: 'Streak Breaks',
+                            subtitle: 'Healthy weight is 72-82kg',
+                            value: '198 lbs',
+                            time: '1d',
+                            extra: '6\'0"',
+                          ),
+                          _DashboardCard(
+                            color: Color(0xFFE3F6FF),
+                            borderColor: Color(0xFFB3E5FC),
+                            icon: Icons.timer,
+                            iconColor: Color(0xFF29B6F6),
+                            title: 'Sessions',
+                            subtitle: 'Full-body workout to boost strength',
+                            value: '30min/120kcal',
+                            time: '1d',
+                          ),
+                          _DashboardCard(
+                            color: Color(0xFFEDE7F6),
+                            borderColor: Color(0xFFD1C4E9),
+                            icon: Icons.bar_chart,
+                            iconColor: Color(0xFF7C4DFF),
+                            title: 'Posture Accuracy',
+                            subtitle: 'Measures how correctly your body aligns during exercise.',
+                            value: '30min/100 kcal',
+                            time: '1d',
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Spacer(),
+                    // Individual bottom buttons
+                    Padding(
+                      padding: EdgeInsets.only(bottom: screenHeight * 0.03, left: screenWidth * 0.08, right: screenWidth * 0.08),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          _BottomButton(icon: Icons.home, label: 'Home', selected: true, onTap: () {}),
+                          _BottomButton(
+                            icon: Icons.fitness_center,
+                            label: 'Workouts',
+                            onTap: () {
+                              Navigator.pushNamed(context, '/workout-type');
+                            },
+                          ),
+                          _BottomButton(icon: Icons.menu_book, label: 'Tutorial', onTap: () {}),
+                          _BottomButton(icon: Icons.history, label: 'History', onTap: () {}),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

@@ -6,12 +6,13 @@ import 'screens/splash_login_signup.dart';
 import 'screens/dashboard.dart';
 import 'screens/plan_selector.dart';
 import 'screens/workout_type.dart';
-import 'screens/live_workout.dart';
+import 'screens/live_workout_mlkit.dart';
 import 'screens/session_summary.dart';
 import 'screens/calendar_history.dart';
 import 'screens/settings.dart';
 import 'screens/tutorials.dart';
 import 'screens/subscription.dart';
+import 'screens/set_rep_timer_edit.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -65,8 +66,17 @@ class TrueFormApp extends StatelessWidget {
         SplashLoginSignupScreen.routeName: (context) => const SplashLoginSignupScreen(),
         DashboardScreen.routeName: (context) => const DashboardScreen(),
         PlanSelectorScreen.routeName: (context) => const PlanSelectorScreen(),
+        SetRepTimerEditScreen.routeName: (context) => const SetRepTimerEditScreen(),
         WorkoutTypeScreen.routeName: (context) => const WorkoutTypeScreen(),
-        LiveWorkoutScreen.routeName: (context) => const LiveWorkoutScreen(),
+        LiveWorkoutMLKitScreen.routeName: (context) {
+          final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+          return LiveWorkoutMLKitScreen(
+            exerciseType: args['exerciseType'] as String,
+            sets: args['sets'] as int,
+            reps: args['reps'] as int,
+            timer: args['timer'] as int,
+          );
+        },
         SessionSummaryScreen.routeName: (context) => const SessionSummaryScreen(),
         CalendarHistoryScreen.routeName: (context) => const CalendarHistoryScreen(),
         SettingsScreen.routeName: (context) => const SettingsScreen(),

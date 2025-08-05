@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google ML Kit Pose Detection Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #1a1a1a;
+            color: white;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: #00ff88;
+        }
+        .video-container {
+            position: relative;
+            width: 640px;
+            height: 480px;
+            margin: 20px auto;
+            border: 3px solid #00ff88;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        #video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        #canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        .controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+        button {
+            background: #00ff88;
+            color: #1a1a1a;
+            border: none;
+            padding: 12px 24px;
+            margin: 0 10px;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        button:hover {
+            background: #00cc6a;
+            transform: translateY(-2px);
+        }
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .status {
+            text-align: center;
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .status.success {
+            background: #00ff88;
+            color: #1a1a1a;
+        }
+        .status.error {
+            background: #ff4444;
+            color: white;
+        }
+        .status.info {
+            background: #4444ff;
+            color: white;
+        }
+        .keypoints-info {
+            background: #333;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .fps {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.7);
+            color: #00ff88;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+        .note {
+            background: #ffaa00;
+            color: #1a1a1a;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 Google ML Kit Pose Detection Test</h1>
+        
+        <div class="note">
+            ⚠️ <strong>Note:</strong> This test uses TensorFlow.js MoveNet as a fallback since Google ML Kit is primarily for mobile apps. 
+            The Flutter app will use the real Google ML Kit API.
+        </div>
+        
+        <div class="status info" id="status">
+            Loading Pose Detection...
+        </div>
+        
+        <div class="controls">
+            <button id="startBtn" onclick="startCamera()">📹 Start Camera</button>
+            <button id="stopBtn" onclick="stopCamera()" disabled>⏹️ Stop Camera</button>
+            <button id="resetBtn" onclick="resetDetection()">🔄 Reset</button>
+        </div>
+        
+        <div class="video-container">
+            <video id="video" autoplay muted playsinline></video>
+            <canvas id="canvas"></canvas>
+            <div class="fps" id="fps">FPS: 0</div>
+        </div>
+        
+        <div class="keypoints-info" id="keypointsInfo">
+            <strong>Keypoints Detected:</strong> 0<br>
+            <strong>Average Confidence:</strong> 0.00<br>
+            <strong>Status:</strong> Waiting for camera...
+        </div>
+    </div>
+
+    <!-- TensorFlow.js and Pose Detection -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.15.0/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection@2.1.0/dist/pose-detection.min.js"></script>
+
+    <script>
+        let video;
+        let canvas;
+        let ctx;
+        let detector;
+        let isRunning = false;
+        let frameCount = 0;
+        let lastTime = 0;
+        let fps = 0;
+
+        // Initialize Pose Detection
+        async function initializePoseDetection() {
+            try {
+                updateStatus('Initializing Pose Detection...', 'info');
+                
+                // Create pose detector using MoveNet (similar to ML Kit)
+                const model = poseDetection.SupportedModels.MoveNet;
+                const detectorConfig = {
+                    modelType: poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING,
+                    enableSmoothing: true,
+                };
+                
+                detector = await poseDetection.createDetector(model, detectorConfig);
+                
+                updateStatus('✅ Pose Detection initialized successfully!', 'success');
+                return true;
+            } catch (error) {
+                updateStatus(`❌ Failed to initialize: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        // Start camera
+        async function startCamera() {
+            try {
+                updateStatus('Starting camera...', 'info');
+                
+                video = document.getElementById('video');
+                canvas = document.getElementById('canvas');
+                ctx = canvas.getContext('2d');
+                
+                // Get camera stream
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        width: 640,
+                        height: 480,
+                        facingMode: 'user'
+                    }
+                });
+                
+                video.srcObject = stream;
+                video.play();
+                
+                // Set canvas size
+                canvas.width = 640;
+                canvas.height = 480;
+                
+                // Start detection loop
+                isRunning = true;
+                document.getElementById('startBtn').disabled = true;
+                document.getElementById('stopBtn').disabled = false;
+                
+                updateStatus('✅ Camera started! Detecting poses...', 'success');
+                
+                // Start detection loop
+                detectPoses();
+                
+            } catch (error) {
+                updateStatus(`❌ Camera error: ${error.message}`, 'error');
+            }
+        }
+
+        // Stop camera
+        function stopCamera() {
+            if (video && video.srcObject) {
+                const tracks = video.srcObject.getTracks();
+                tracks.forEach(track => track.stop());
+                video.srcObject = null;
+            }
+            
+            isRunning = false;
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = true;
+            
+            // Clear canvas
+            if (ctx) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+            
+            updateStatus('⏹️ Camera stopped', 'info');
+            updateKeypointsInfo(0, 0, 'Camera stopped');
+        }
+
+        // Reset detection
+        function resetDetection() {
+            stopCamera();
+            setTimeout(() => {
+                updateStatus('🔄 Ready to start', 'info');
+                updateKeypointsInfo(0, 0, 'Ready');
+            }, 100);
+        }
+
+        // Detect poses
+        async function detectPoses() {
+            if (!isRunning || !detector) return;
+            
+            try {
+                // Get poses from video frame
+                const poses = await detector.estimatePoses(video);
+                
+                // Clear canvas
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                if (poses.length > 0) {
+                    const pose = poses[0]; // Get first pose
+                    drawPose(pose);
+                    
+                    // Update keypoints info
+                    const avgConfidence = pose.keypoints.reduce((sum, kp) => sum + kp.score, 0) / pose.keypoints.length;
+                    updateKeypointsInfo(pose.keypoints.length, avgConfidence, 'Person detected!');
+                    
+                    updateStatus(`✅ Person detected! Confidence: ${avgConfidence.toFixed(2)}`, 'success');
+                } else {
+                    updateKeypointsInfo(0, 0, 'No person detected');
+                    updateStatus('❌ No person detected in frame', 'error');
+                }
+                
+                // Calculate FPS
+                frameCount++;
+                const currentTime = performance.now();
+                if (currentTime - lastTime >= 1000) {
+                    fps = frameCount;
+                    frameCount = 0;
+                    lastTime = currentTime;
+                    document.getElementById('fps').textContent = `FPS: ${fps}`;
+                }
+                
+                // Continue detection loop
+                requestAnimationFrame(detectPoses);
+                
+            } catch (error) {
+                updateStatus(`❌ Detection error: ${error.message}`, 'error');
+                // Continue detection loop even on error
+                requestAnimationFrame(detectPoses);
+            }
+        }
+
+        // Draw pose keypoints and connections
+        function drawPose(pose) {
+            const keypoints = pose.keypoints;
+            
+            // Draw keypoints
+            keypoints.forEach(keypoint => {
+                if (keypoint.score > 0.3) { // Only draw if confidence > 30%
+                    ctx.beginPath();
+                    ctx.arc(keypoint.x, keypoint.y, 5, 0, 2 * Math.PI);
+                    ctx.fillStyle = `hsl(${keypoint.score * 120}, 100%, 50%)`;
+                    ctx.fill();
+                    
+                    // Draw confidence text
+                    ctx.fillStyle = 'white';
+                    ctx.font = '12px Arial';
+                    ctx.fillText(keypoint.score.toFixed(2), keypoint.x + 8, keypoint.y - 8);
+                }
+            });
+            
+            // Draw connections (skeleton) - ML Kit style connections
+            const connections = [
+                ['nose', 'left_eye'], ['nose', 'right_eye'],
+                ['left_eye', 'left_ear'], ['right_eye', 'right_ear'],
+                ['left_shoulder', 'right_shoulder'],
+                ['left_shoulder', 'left_elbow'], ['right_shoulder', 'right_elbow'],
+                ['left_elbow', 'left_wrist'], ['right_elbow', 'right_wrist'],
+                ['left_shoulder', 'left_hip'], ['right_shoulder', 'right_hip'],
+                ['left_hip', 'right_hip'],
+                ['left_hip', 'left_knee'], ['right_hip', 'right_knee'],
+                ['left_knee', 'left_ankle'], ['right_knee', 'right_ankle']
+            ];
+            
+            connections.forEach(([start, end]) => {
+                const startKp = keypoints.find(kp => kp.name === start);
+                const endKp = keypoints.find(kp => kp.name === end);
+                
+                if (startKp && endKp && startKp.score > 0.3 && endKp.score > 0.3) {
+                    ctx.beginPath();
+                    ctx.moveTo(startKp.x, startKp.y);
+                    ctx.lineTo(endKp.x, endKp.y);
+                    ctx.strokeStyle = '#00ff88';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+            });
+        }
+
+        // Update status
+        function updateStatus(message, type) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${type}`;
+        }
+
+        // Update keypoints info
+        function updateKeypointsInfo(count, confidence, status) {
+            const info = document.getElementById('keypointsInfo');
+            info.innerHTML = `
+                <strong>Keypoints Detected:</strong> ${count}<br>
+                <strong>Average Confidence:</strong> ${confidence.toFixed(2)}<br>
+                <strong>Status:</strong> ${status}
+            `;
+        }
+
+        // Initialize when page loads
+        window.addEventListener('load', async () => {
+            const success = await initializePoseDetection();
+            if (success) {
+                updateStatus('✅ Ready! Click "Start Camera" to begin pose detection', 'success');
+            }
+        });
+    </script>
+</body>
+</html> 
